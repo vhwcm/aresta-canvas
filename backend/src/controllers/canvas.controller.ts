@@ -13,7 +13,7 @@ export class CanvasController {
 
   async get(req: Request, res: Response): Promise<void> {
     try {
-      const canvas = await canvasService.getById(req.params.id, req.user!.userId)
+      const canvas = await canvasService.getById(String(req.params.id), req.user!.userId)
       res.json(canvas)
     } catch (err: any) {
       res.status(404).json({ error: err.message })
@@ -31,7 +31,7 @@ export class CanvasController {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const canvas = await canvasService.update(req.params.id, req.user!.userId, req.body)
+      const canvas = await canvasService.update(String(req.params.id), req.user!.userId, req.body)
       res.json(canvas)
     } catch (err: any) {
       res.status(400).json({ error: err.message })
@@ -40,7 +40,7 @@ export class CanvasController {
 
   async remove(req: Request, res: Response): Promise<void> {
     try {
-      const result = await canvasService.delete(req.params.id, req.user!.userId)
+      const result = await canvasService.delete(String(req.params.id), req.user!.userId)
       res.json(result)
     } catch (err: any) {
       res.status(404).json({ error: err.message })
@@ -49,7 +49,7 @@ export class CanvasController {
 
   async duplicate(req: Request, res: Response): Promise<void> {
     try {
-      const canvas = await canvasService.duplicate(req.params.id, req.user!.userId)
+      const canvas = await canvasService.duplicate(String(req.params.id), req.user!.userId)
       res.status(201).json(canvas)
     } catch (err: any) {
       res.status(404).json({ error: err.message })
