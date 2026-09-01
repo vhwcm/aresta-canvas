@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: user_id is an external reference to aresta-auth User.id
+// No FK constraint since databases are isolated.
+model Canvas {
+  id          String   @id @default(uuid())
+  user_id     Int      // external ref — aresta-auth User.id
+  title       String   @default("Quadro sem título")
+  description String?
+  data        String   // JSON Canvas Spec (nodes, edges, viewport)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+
+  @@index([user_id, updated_at])
+  @@map("canvases")
+}
