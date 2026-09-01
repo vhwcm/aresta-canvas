@@ -4,8 +4,8 @@ import { canvasService } from '../services/canvas.service'
 export class CanvasController {
   async list(req: Request, res: Response): Promise<void> {
     try {
-      const canvases = await canvasService.findAll(req.user!.userId)
-      res.json({ canvases })
+      const canvases = await canvasService.getAllByUser(req.user!.userId)
+      res.json(canvases)
     } catch (err: any) {
       res.status(500).json({ error: err.message })
     }
@@ -13,8 +13,8 @@ export class CanvasController {
 
   async get(req: Request, res: Response): Promise<void> {
     try {
-      const canvas = await canvasService.findById(req.params.id, req.user!.userId)
-      res.json({ canvas })
+      const canvas = await canvasService.getById(req.params.id, req.user!.userId)
+      res.json(canvas)
     } catch (err: any) {
       res.status(404).json({ error: err.message })
     }
@@ -23,7 +23,7 @@ export class CanvasController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const canvas = await canvasService.create(req.user!.userId, req.body)
-      res.status(201).json({ canvas })
+      res.status(201).json(canvas)
     } catch (err: any) {
       res.status(400).json({ error: err.message })
     }
@@ -32,7 +32,7 @@ export class CanvasController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const canvas = await canvasService.update(req.params.id, req.user!.userId, req.body)
-      res.json({ canvas })
+      res.json(canvas)
     } catch (err: any) {
       res.status(400).json({ error: err.message })
     }
@@ -40,8 +40,17 @@ export class CanvasController {
 
   async remove(req: Request, res: Response): Promise<void> {
     try {
-      await canvasService.delete(req.params.id, req.user!.userId)
-      res.status(204).send()
+      const result = await canvasService.delete(req.params.id, req.user!.userId)
+      res.json(result)
+    } catch (err: any) {
+      res.status(404).json({ error: err.message })
+    }
+  }
+
+  async duplicate(req: Request, res: Response): Promise<void> {
+    try {
+      const canvas = await canvasService.duplicate(req.params.id, req.user!.userId)
+      res.status(201).json(canvas)
     } catch (err: any) {
       res.status(404).json({ error: err.message })
     }
@@ -49,3 +58,4 @@ export class CanvasController {
 }
 
 export const canvasController = new CanvasController()
+
