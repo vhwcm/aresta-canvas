@@ -12,7 +12,7 @@ import type {
 import { useAuth } from '~/composables/useAuth';
 import { canvasRepo } from '~/adapters/database/repositories/CanvasRepository';
 
-const API_BASE = 'http://localhost:7070/api';
+const API_BASE = 'http://localhost:3004/api';
 
 // Shared module-level reactive state across components for current active canvas session
 const canvasesList = ref<CanvasSummary[]>([]);

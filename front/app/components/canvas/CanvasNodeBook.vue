@@ -16,7 +16,7 @@
           class="w-full h-full object-cover"
         />
         <div v-else class="text-textSecondary/40 text-xs text-center p-1 font-mono">
-          Sem capa
+          📖 Sem capa
         </div>
       </div>
 
@@ -32,17 +32,27 @@
           <p v-if="node.bookAuthor" class="text-xs text-textSecondary line-clamp-1 mt-0.5">
             {{ node.bookAuthor }}
           </p>
+
+          <!-- Progresso -->
+          <div v-if="typeof node.bookProgress === 'number' && node.bookProgress > 0" class="mt-1.5 flex items-center gap-1.5">
+            <div class="flex-1 h-1.5 bg-bgElevated rounded-full overflow-hidden border border-divider">
+              <div class="h-full bg-primary rounded-full transition-all" :style="{ width: `${Math.min(100, Math.max(0, node.bookProgress))}%` }" />
+            </div>
+            <span class="text-[10px] font-mono text-textSecondary">{{ Math.round(node.bookProgress) }}%</span>
+          </div>
         </div>
 
-        <NuxtLink
+        <a
           v-if="node.bookId"
-          :to="`/reader?bookId=${node.bookId}`"
+          :href="readerUrl"
+          target="_blank"
+          rel="noopener noreferrer"
           class="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded bg-bgElevated hover:bg-bgSurface text-xs text-textPrimary font-medium border border-divider transition-colors mt-2"
           @click.stop
         >
-          <span>Abrir Leitor</span>
-          <span class="text-xs">→</span>
-        </NuxtLink>
+          <span>Abrir no Leitor</span>
+          <span class="text-xs">↗</span>
+        </a>
       </div>
     </div>
   </div>
@@ -57,11 +67,16 @@ const props = defineProps<{
   isSelected?: boolean;
 }>();
 
+const readerUrl = computed(() => {
+  if (!props.node.bookId) return '#';
+  return `http://localhost:3010/reader?bookId=${props.node.bookId}`;
+});
+
 const coverUrl = computed(() => {
   if (!props.node.bookCover) return '';
   if (props.node.bookCover.startsWith('http') || props.node.bookCover.startsWith('/')) {
     return props.node.bookCover;
   }
-  return `http://localhost:7070/${props.node.bookCover}`;
+  return `http://localhost:3003/${props.node.bookCover}`;
 });
 </script>

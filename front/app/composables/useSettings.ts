@@ -1,15 +1,10 @@
 import { reactive, computed, readonly } from 'vue'
 import { useAuth } from '~/composables/useAuth'
-import { useReaderStore, type ReaderColorTheme, type ReaderWidthMode } from '~/stores/readerStore'
+export type ReaderColorTheme = any;
+export type ReaderWidthMode = any;
 
 function trySyncReaderStore() {
-  if (typeof window === 'undefined') return
-  try {
-    const store = useReaderStore()
-    store.syncSettings()
-  } catch {
-    // pinia não inicializado ou SSR
-  }
+  // no-op no app de canvas
 }
 
 export type ThemeMode = 'dark' | 'light' | 'sepia'

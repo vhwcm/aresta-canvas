@@ -1,0 +1,24 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "node",
+      "vitest/globals"
+    ]
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    "app/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "app/adapters/BookDocumentFactory.ts",
+    "app/adapters/EpubDocumentAdapter.ts",
+    "app/adapters/PdfDocumentAdapter.ts",
+    "app/composables/useSettings.ts",
+    "app/utils/pageCurlMath.ts",
+    "app/utils/fileValidator.ts"
+  ]
+}

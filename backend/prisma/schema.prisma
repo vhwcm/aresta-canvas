@@ -21,3 +21,32 @@ model Canvas {
   @@index([user_id, updated_at])
   @@map("canvases")
 }
+
+model Note {
+  id          String     @id @default(uuid())
+  user_id     Int        // external ref — aresta-auth User.id
+  title       String     @default("Nota sem título")
+  content     String     @default("")
+  folder      String?
+  tags        String     @default("[]") // JSON string array
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now()) @updatedAt
+
+  noteLinks   NoteLink[] @relation("SourceNote")
+
+  @@index([user_id, updated_at])
+  @@map("notes")
+}
+
+model NoteLink {
+  id             Int      @id @default(autoincrement())
+  source_note_id String
+  target_type    String   // 'NOTE' | 'CANVAS' | 'BOOK'
+  target_id      String   // UUID ou Book ID
+  created_at     DateTime @default(now())
+
+  sourceNote     Note     @relation("SourceNote", fields: [source_note_id], references: [id], onDelete: Cascade)
+
+  @@index([source_note_id, target_type, target_id])
+  @@map("note_links")
+}
