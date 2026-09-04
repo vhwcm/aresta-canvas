@@ -78,14 +78,14 @@
           </button>
           <button
             class="px-3.5 py-2 rounded-xl bg-bgElevated hover:bg-bgSurface text-textPrimary border border-divider text-xs font-medium transition-all hover:scale-102 cursor-pointer flex items-center gap-1.5"
-            @click="openNewNoteDrawer"
+            @click="openDrawer('notes', true)"
           >
             <span>📝</span>
             <span>Nova Nota</span>
           </button>
           <button
             class="px-3.5 py-2 rounded-xl bg-bgElevated hover:bg-bgSurface text-textPrimary border border-divider text-xs font-medium transition-all hover:scale-102 cursor-pointer"
-            @click="openBooksDrawer"
+            @click="openDrawer('books')"
           >
             📖 Inserir Livro
           </button>
@@ -110,7 +110,7 @@
       :is-saving="isSaving"
       @update:active-tool="activeTool = $event"
       @update:selected-shape-type="selectedShapeType = $event"
-      @open-insert-drawer="openGeneralDrawer"
+      @open-insert-drawer="openDrawer('books')"
       @create-text-at-center="createLooseTextAtCenter"
       @undo="undo"
       @redo="redo"
@@ -155,21 +155,9 @@ const drawerOpenNewNote = ref(false);
 
 const { createNote } = useNotes();
 
-const openGeneralDrawer = () => {
-  drawerTab.value = 'books';
-  drawerOpenNewNote.value = false;
-  showInsertDrawer.value = true;
-};
-
-const openBooksDrawer = () => {
-  drawerTab.value = 'books';
-  drawerOpenNewNote.value = false;
-  showInsertDrawer.value = true;
-};
-
-const openNewNoteDrawer = () => {
-  drawerTab.value = 'notes';
-  drawerOpenNewNote.value = true;
+const openDrawer = (tab: 'books' | 'notes' | 'quotes', openNewNote = false) => {
+  drawerTab.value = tab;
+  drawerOpenNewNote.value = openNewNote;
   showInsertDrawer.value = true;
 };
 
@@ -454,10 +442,24 @@ const onPointerUp = (e: PointerEvent) => {
   }
 };
 
-// Wheel Zoom
+// Wheel Interaction:
+// 1. Clicar + dois dedos para cima/baixo (ou pinch/Ctrl+wheel): Zoom / Deszoom
+// 2. Dois dedos apenas (sem clique): Move a tela (Pan 2D)
 const onWheel = (e: WheelEvent) => {
-  const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
-  zoomAt(e.clientX, e.clientY, zoomFactor);
+  const isClicking = e.buttons !== 0;
+  const isPinchOrCtrl = e.ctrlKey || e.metaKey;
+
+  if (isClicking || isPinchOrCtrl) {
+    if (isPanning.value) {
+      isPanning.value = false;
+    }
+    const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+    zoomAt(e.clientX, e.clientY, zoomFactor);
+    return;
+  }
+
+  // Dois dedos apenas movem a tela (pan suave 2D)
+  panBy(-e.deltaX, -e.deltaY);
 };
 
 // Node Interactions
@@ -602,30 +604,12 @@ const handleInsertNote = (note: any) => {
 const handleConvertToNote = async (nodeId: string) => {
   const node = nodes.value.find((n) => n.id === nodeId);
   if (!node) return;
-
   const rawText = node.text || '';
   const lines = rawText.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
-  let title = 'Nota do Canvas';
-  if (lines.length > 0 && lines[0]) {
-    title = lines[0].replace(/^[#\s*->]+/, '').trim().substring(0, 60) || 'Nota do Canvas';
-  }
-
+  const title = (lines[0] ? lines[0].replace(/^[#\s*->]+/, '').trim().substring(0, 60) : '') || 'Nota do Canvas';
   try {
-    const created = await createNote({
-      title,
-      content: rawText,
-      folder: null,
-    });
-    updateNode(
-      nodeId,
-      {
-        type: 'note_embed',
-        noteId: created.id,
-        noteTitle: created.title,
-        noteContent: created.content,
-      },
-      true
-    );
+    const created = await createNote({ title, content: rawText, folder: null });
+    updateNode(nodeId, { type: 'note_embed', noteId: created.id, noteTitle: created.title, noteContent: created.content }, true);
   } catch (err) {
     console.error('Erro ao converter bloco em nota:', err);
   }
