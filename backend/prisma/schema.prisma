@@ -14,11 +14,14 @@ model Canvas {
   user_id     Int      // external ref — aresta-auth User.id
   title       String   @default("Quadro sem título")
   description String?
+  folder      String?
+  tags        String   @default("[]") // JSON string array
   data        String   // JSON Canvas Spec (nodes, edges, viewport)
   created_at  DateTime @default(now())
   updated_at  DateTime @default(now()) @updatedAt
 
   @@index([user_id, updated_at])
+  @@index([user_id, folder])
   @@map("canvases")
 }
 

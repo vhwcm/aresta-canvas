@@ -2,6 +2,12 @@
   <div
     ref="boardContainerRef"
     class="canvas-board-wrapper relative w-full h-full overflow-hidden bg-bgRoot select-none touch-none"
+    :class="{
+      'cursor-text': activeTool === 'loose_text',
+      'cursor-crosshair': activeTool === 'note' || activeTool === 'shape',
+      'cursor-grab': activeTool === 'select' && isSpacePressed,
+      'cursor-grabbing': isPanning,
+    }"
     tabindex="0"
     @wheel.prevent="onWheel"
     @pointerdown="onBackgroundPointerDown"
@@ -97,6 +103,7 @@
       @update:active-tool="activeTool = $event"
       @update:selected-shape-type="selectedShapeType = $event"
       @open-insert-drawer="showInsertDrawer = true"
+      @create-text-at-center="createLooseTextAtCenter"
       @undo="undo"
       @redo="redo"
       @zoom-in="zoomAt(centerScreen.x, centerScreen.y, 1.2)"
@@ -245,6 +252,28 @@ const onDoubleClick = (e: MouseEvent) => {
   addNode(newNode);
 };
 
+// Create Free / Loose Text Node (Sem quadrado, escrita livre imediata)
+const createLooseTextNode = (canvasX: number, canvasY: number) => {
+  const newNode: CanvasNode = {
+    id: `node-${Date.now()}`,
+    type: 'loose_text',
+    x: Math.round(canvasX - 10),
+    y: Math.round(canvasY - 14),
+    width: 280,
+    height: 56,
+    text: '',
+  };
+  addNode(newNode);
+  selectedNodeIds.value = [newNode.id];
+  selectedEdgeId.value = null;
+};
+
+const createLooseTextAtCenter = () => {
+  const centerCoords = screenToCanvas(centerScreen.value.x, centerScreen.value.y);
+  createLooseTextNode(centerCoords.x, centerCoords.y);
+  activeTool.value = 'select';
+};
+
 // Background Pointer Down
 const onBackgroundPointerDown = (e: PointerEvent) => {
   if (activeTool.value === 'pen') return;
@@ -255,9 +284,15 @@ const onBackgroundPointerDown = (e: PointerEvent) => {
   // Single click with creation tool
   if (isLeftClick && (activeTool.value === 'note' || activeTool.value === 'shape' || activeTool.value === 'loose_text')) {
     const coords = screenToCanvas(e.clientX, e.clientY);
+    if (activeTool.value === 'loose_text') {
+      createLooseTextNode(coords.x, coords.y);
+      activeTool.value = 'select';
+      return;
+    }
+
     const newNode: CanvasNode = {
       id: `node-${Date.now()}`,
-      type: activeTool.value === 'shape' ? 'shape' : (activeTool.value === 'loose_text' ? 'loose_text' : 'text'),
+      type: activeTool.value === 'shape' ? 'shape' : 'text',
       shape: activeTool.value === 'shape' ? selectedShapeType.value : undefined,
       x: Math.round(coords.x - 100),
       y: Math.round(coords.y - 60),
@@ -267,6 +302,7 @@ const onBackgroundPointerDown = (e: PointerEvent) => {
       color: '#E57B55',
     };
     addNode(newNode);
+    selectedNodeIds.value = [newNode.id];
     activeTool.value = 'select';
     return;
   }
@@ -554,6 +590,8 @@ const onKeyDown = (e: KeyboardEvent) => {
     activeTool.value = 'select';
   } else if (e.key.toLowerCase() === 'n') {
     activeTool.value = 'note';
+  } else if (e.key.toLowerCase() === 't') {
+    activeTool.value = 'loose_text';
   } else if (e.key.toLowerCase() === 's') {
     activeTool.value = 'shape';
   } else if (e.key.toLowerCase() === 'p') {

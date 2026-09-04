@@ -1,0 +1,54 @@
+================================================================================
+          ECOSSISTEMA ARESTA — FLUXO DE PASTAS, TAGS E NAVBAR NO CANVAS
+================================================================================
+
+                               +-----------------------+
+                               |     Aba Navegador     |
+                               | [SVG: Favicon Oficial]|
+                               +-----------+-----------+
+                                           |
+                                           v
+                       +---------------------------------------+
+                       |        aresta-canvas front            |
+                       |         (Nuxt 3 / SPA / Tauri)        |
+                       +-------------------+-------------------+
+                                           |
+     +-------------------------------------+-----------------------------------+
+     |                                     |                                   |
+     v                                     v                                   v
++-----------------------+     +-------------------------+     +--------------------------------+
+|  FolderTagSidebar     |     |   Lista / Cards         |     |      BottomNavbar              |
+|  (Samsung Notes UI)   |     |   (Quadros / Notas)     |     |      (Floating Dock)           |
++-----------------------+     +-------------------------+     +--------------------------------+
+| [Todas (14)]          |     | [Card 1: Álgebra Linear]|     | [Quadros] [Notas] [Ecossistema]|
+| [Sem pasta (3)]       |     |  Pasta: Faculdade       |     |        (A) [Aresta Logo]       |
+|                       |     |  Tags: #matematica #ex  |     | [Revisão] [Conta] [Tema] [<<]  |
+| 📁 Faculdade (6)      |     |                         |     +--------------------------------+
+| 📁 Projetos (5)       |     | [Card 2: Resumo IA]     |                      |
+| [+ Nova Pasta]        |     |  Pasta: Projetos        |                      v
+|                       |     |  Tags: #ai #rag         |             +------------------+
+| TAGS:                 |     +-------------------------+             | Links Ecossistema|
+| #matematica (4)       |                  |                          | Reader (:3010)   |
+| #estudo (8)           |                  |                          | Memory (:3005)   |
+| #ai (2)               |                  |                          +------------------+
++-----------------------+                  |
+     | (Filtros: Pasta / Tag)              v
+     +-----------------------> +------------------------+
+                               |  useCanvas / useNotes  |
+                               +-----------+------------+
+                                           |
+                                           | (REST API :3004)
+                                           v
+                       +---------------------------------------+
+                       |        aresta-canvas backend          |
+                       |         (Express API :3004)           |
+                       +-------------------+-------------------+
+                                           |
+                                           | (Prisma ORM)
+                                           v
+                       +---------------------------------------+
+                       |        SQLite Database                |
+                       |        aresta_canvas.db               |
+                       |  - canvases (folder, tags, JSON data) |
+                       |  - notes (folder, tags, markdown)     |
+                       +---------------------------------------+

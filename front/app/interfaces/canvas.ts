@@ -55,6 +55,8 @@ export interface CanvasSummary {
   userId?: number;
   title: string;
   description?: string | null;
+  folder?: string | null;
+  tags?: string[];
   nodeCount?: number;
   edgeCount?: number;
   createdAt?: string;

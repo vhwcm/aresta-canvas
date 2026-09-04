@@ -4,8 +4,22 @@ import { canvasService } from '../services/canvas.service'
 export class CanvasController {
   async list(req: Request, res: Response): Promise<void> {
     try {
-      const canvases = await canvasService.getAllByUser(req.user!.userId)
+      const { folder, tag, search } = req.query
+      const canvases = await canvasService.getAllByUser(req.user!.userId, {
+        folder: folder ? String(folder) : undefined,
+        tag: tag ? String(tag) : undefined,
+        search: search ? String(search) : undefined,
+      })
       res.json(canvases)
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  }
+
+  async folders(req: Request, res: Response): Promise<void> {
+    try {
+      const folders = await canvasService.getFolders(req.user!.userId)
+      res.json(folders)
     } catch (err: any) {
       res.status(500).json({ error: err.message })
     }
@@ -58,4 +72,3 @@ export class CanvasController {
 }
 
 export const canvasController = new CanvasController()
-

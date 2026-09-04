@@ -15,6 +15,7 @@
       :node="node"
       :is-selected="isSelected"
       @update:text="$emit('update-text', node.id, $event)"
+      @delete="$emit('delete', node.id)"
     />
 
     <CanvasNodeShape

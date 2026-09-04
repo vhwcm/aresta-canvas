@@ -75,8 +75,8 @@
       <button
         class="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
         :class="activeTool === 'loose_text' ? 'bg-primary text-white shadow-md' : 'text-textSecondary hover:text-textPrimary hover:bg-bgElevated'"
-        title="Texto Solto (T)"
-        @click="$emit('update:activeTool', 'loose_text')"
+        title="Texto Livre (T) — Clique no canvas para escrever"
+        @click="onTextClick"
       >
         <span class="font-serif font-bold text-sm">T</span>
       </button>
@@ -194,7 +194,7 @@
 import { ref, h } from 'vue';
 import type { CanvasShapeType } from '~/interfaces/canvas';
 
-defineProps<{
+const props = defineProps<{
   activeTool: string;
   selectedShapeType: CanvasShapeType;
   canUndo: boolean;
@@ -207,6 +207,7 @@ const emit = defineEmits<{
   (e: 'update:activeTool', tool: 'select' | 'note' | 'shape' | 'loose_text' | 'pen'): void;
   (e: 'update:selectedShapeType', shape: CanvasShapeType): void;
   (e: 'open-insert-drawer'): void;
+  (e: 'create-text-at-center'): void;
   (e: 'undo'): void;
   (e: 'redo'): void;
   (e: 'zoom-in'): void;
@@ -214,6 +215,14 @@ const emit = defineEmits<{
   (e: 'reset-zoom'): void;
   (e: 'export'): void;
 }>();
+
+const onTextClick = () => {
+  if (props.activeTool === 'loose_text') {
+    emit('create-text-at-center');
+  } else {
+    emit('update:activeTool', 'loose_text');
+  }
+};
 
 const showShapesMenu = ref(false);
 
