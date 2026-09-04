@@ -108,6 +108,78 @@
 
       <!-- Notes Tab -->
       <template v-else-if="activeTab === 'notes'">
+        <!-- New Note Action Button / Form -->
+        <div class="mb-3">
+          <button
+            v-if="!showNewNoteForm"
+            class="w-full py-2 px-3 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+            @click="showNewNoteForm = true"
+          >
+            <span class="text-sm">＋</span>
+            <span>Criar Nova Nota</span>
+          </button>
+
+          <!-- Inline Create Note Form -->
+          <div
+            v-else
+            class="p-3 rounded-xl bg-bgElevated border border-primary/40 space-y-2.5 animate-in fade-in zoom-in-95 duration-150 shadow-lg"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-textPrimary flex items-center gap-1">
+                <span>📝</span> Criar Nova Nota
+              </span>
+              <button
+                class="text-xs text-textSecondary hover:text-textPrimary"
+                @click="showNewNoteForm = false"
+              >
+                ✕
+              </button>
+            </div>
+
+            <input
+              v-model="newNoteTitle"
+              type="text"
+              placeholder="Título da nota *"
+              class="w-full px-2.5 py-1.5 rounded-lg bg-bgSurface border border-divider text-xs text-textPrimary focus:outline-none focus:border-primary font-interface"
+              @keydown.enter.prevent="handleCreateAndInsertNote"
+            />
+
+            <select
+              v-model="newNoteFolder"
+              class="w-full px-2.5 py-1.5 rounded-lg bg-bgSurface border border-divider text-xs text-textPrimary focus:outline-none focus:border-primary font-interface"
+            >
+              <option :value="null">Sem pasta (Geral)</option>
+              <option v-for="f in folders" :key="f" :value="f">📁 {{ f }}</option>
+            </select>
+
+            <textarea
+              v-model="newNoteContent"
+              rows="3"
+              placeholder="Conteúdo em Markdown..."
+              class="w-full px-2.5 py-1.5 rounded-lg bg-bgSurface border border-divider text-xs text-textPrimary focus:outline-none focus:border-primary font-interface resize-none placeholder:text-textSecondary/40 custom-scrollbar"
+            ></textarea>
+
+            <div class="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                class="px-2.5 py-1 rounded-lg border border-divider text-[11px] text-textSecondary hover:text-textPrimary"
+                @click="showNewNoteForm = false"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                :disabled="isCreatingNote || !newNoteTitle.trim()"
+                class="px-3 py-1 rounded-lg bg-primary hover:bg-primaryHover text-white text-[11px] font-semibold transition-all disabled:opacity-40 flex items-center gap-1 shadow-sm"
+                @click="handleCreateAndInsertNote"
+              >
+                <span v-if="isCreatingNote">Criando...</span>
+                <span v-else>Criar e Inserir</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div
           v-for="note in filteredNotes"
           :key="note.id"
@@ -130,7 +202,7 @@
           </button>
         </div>
 
-        <div v-if="filteredNotes.length === 0" class="text-center py-8 text-xs text-textSecondary">
+        <div v-if="filteredNotes.length === 0 && !showNewNoteForm" class="text-center py-8 text-xs text-textSecondary">
           Nenhuma nota encontrada.
         </div>
       </template>
@@ -168,23 +240,62 @@ import { ref, computed, onMounted } from 'vue';
 import { useAnnotations } from '~/composables/useAnnotations';
 import { useNotes } from '~/composables/useNotes';
 
-defineEmits<{
-  (e: 'close'): void;
-  (e: 'insert-book', book: any): void;
-  (e: 'insert-note', note: any): void;
-  (e: 'insert-annotation', annotation: any): void;
+const props = withDefaults(
+  defineProps<{
+    initialTab?: 'books' | 'notes' | 'quotes';
+    openCreateNote?: boolean;
+  }>(),
+  {
+    initialTab: 'books',
+    openCreateNote: false,
+  }
+);
+
+const emit = defineEmits<{
+  (_e: 'close'): void;
+  (_e: 'insert-book', _book: any): void;
+  (_e: 'insert-note', _note: any): void;
+  (_e: 'insert-annotation', _annotation: any): void;
 }>();
 
-const activeTab = ref<'books' | 'notes' | 'quotes'>('books');
+const activeTab = ref<'books' | 'notes' | 'quotes'>(props.initialTab);
 const searchQuery = ref('');
+const showNewNoteForm = ref(props.openCreateNote);
+const newNoteTitle = ref('');
+const newNoteFolder = ref<string | null>(null);
+const newNoteContent = ref('');
+const isCreatingNote = ref(false);
 
 const userBooks = ref<any[]>([]);
 const { annotations, fetchAnnotations } = useAnnotations();
-const { notesList, fetchNotes } = useNotes();
+const { notesList, folders, fetchNotes, fetchFolders, createNote } = useNotes();
 
 onMounted(async () => {
-  await Promise.all([fetchNotes(), fetchAnnotations()]);
+  await Promise.all([fetchNotes(), fetchAnnotations(), fetchFolders()]);
 });
+
+const handleCreateAndInsertNote = async () => {
+  const title = newNoteTitle.value.trim();
+  if (!title || isCreatingNote.value) return;
+
+  isCreatingNote.value = true;
+  try {
+    const created = await createNote({
+      title,
+      content: newNoteContent.value,
+      folder: newNoteFolder.value,
+    });
+    newNoteTitle.value = '';
+    newNoteContent.value = '';
+    newNoteFolder.value = null;
+    showNewNoteForm.value = false;
+    emit('insert-note', created);
+  } catch (err) {
+    console.error('Erro ao criar nota:', err);
+  } finally {
+    isCreatingNote.value = false;
+  }
+};
 
 const getCoverUrl = (path: string) => {
   if (!path) return '';

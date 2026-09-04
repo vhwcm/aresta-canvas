@@ -69,7 +69,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'transcribed', result: { text: string; x: number; y: number; width: number; height: number }): void;
+  (_e: 'transcribed', _result: { text: string; x: number; y: number; width: number; height: number }): void;
 }>();
 
 const drawingCanvasRef = ref<HTMLCanvasElement | null>(null);
@@ -77,6 +77,9 @@ const drawingCanvasRef = ref<HTMLCanvasElement | null>(null);
 const {
   isDrawing,
   strokes,
+  currentStroke,
+  strokeColor,
+  strokeWidth,
   hasStrokes,
   boundingBox,
   isTranscribing,
@@ -126,6 +129,7 @@ const redraw = () => {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
+  // 1. Renderizar traços já concluídos
   for (const stroke of strokes.value) {
     if (stroke.points.length < 2) continue;
     ctx.strokeStyle = stroke.color || '#E57B55';
@@ -141,6 +145,32 @@ const redraw = () => {
       }
     }
     ctx.stroke();
+  }
+
+  // 2. Renderizar traço em andamento (tempo real enquanto o mouse se move)
+  if (currentStroke.value.length > 0) {
+    const pts = currentStroke.value;
+    const color = strokeColor.value || '#E57B55';
+    const width = strokeWidth.value || 3;
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width;
+
+    if (pts.length === 1 && pts[0]) {
+      ctx.beginPath();
+      ctx.arc(pts[0].x, pts[0].y, width / 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (pts.length >= 2 && pts[0]) {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length; i++) {
+        const pt = pts[i];
+        if (pt) {
+          ctx.lineTo(pt.x, pt.y);
+        }
+      }
+      ctx.stroke();
+    }
   }
 
   ctx.restore();
@@ -161,7 +191,7 @@ const onPointerMove = (e: PointerEvent) => {
   redraw();
 };
 
-const onPointerUp = (e: PointerEvent) => {
+const onPointerUp = (_e: PointerEvent) => {
   if (!isDrawing.value) return;
   endStroke();
   redraw();
@@ -190,7 +220,7 @@ const resizeCanvas = () => {
 };
 
 watch(
-  () => [props.viewport.x, props.viewport.y, props.viewport.zoom, strokes.value],
+  () => [props.viewport.x, props.viewport.y, props.viewport.zoom, strokes.value, currentStroke.value.length],
   () => {
     redraw();
   },

@@ -24,8 +24,10 @@
         <textarea
           ref="textareaRef"
           v-model="localText"
-          class="w-full flex-1 bg-transparent text-textPrimary text-sm resize-none focus:outline-none font-interface placeholder:text-textSecondary/50"
+          class="w-full flex-1 bg-transparent text-textPrimary text-sm resize-none focus:outline-none font-interface placeholder:text-textSecondary/50 select-text cursor-text"
           placeholder="Escreva em Markdown..."
+          @pointerdown.stop
+          @mousedown.stop
           @blur="finishEditing"
           @keydown.esc="finishEditing"
         ></textarea>
@@ -61,13 +63,16 @@
     @click="onLooseClick"
   >
     <!-- Modo de Edição Livre: textarea transparente sem poluição visual -->
-    <div v-if="isEditing" class="w-full h-full flex flex-col p-1.5">
+    <div v-if="isEditing" class="w-full h-full flex flex-col p-1.5" @pointerdown.stop @mousedown.stop>
       <textarea
         ref="textareaRef"
         v-model="localText"
-        class="w-full h-full bg-transparent resize-none focus:outline-none font-interface text-base leading-relaxed placeholder:text-textSecondary/40 placeholder:italic select-text custom-scrollbar"
+        class="w-full h-full bg-transparent resize-none focus:outline-none font-interface text-base leading-relaxed placeholder:text-textSecondary/40 placeholder:italic select-text cursor-text custom-scrollbar"
         :style="{ color: node.color || 'inherit' }"
         placeholder="Comece a escrever livremente..."
+        @pointerdown.stop
+        @mousedown.stop
+        @click.stop
         @blur="finishEditing"
         @keydown.esc="finishEditing"
         @keydown.ctrl.enter="finishEditing"
@@ -77,8 +82,9 @@
     <!-- Modo de Leitura Livre: renderização direta e limpa no canvas -->
     <div
       v-else
-      class="w-full h-full p-1.5 overflow-visible select-text leading-relaxed break-words font-interface"
+      class="w-full h-full p-1.5 overflow-visible select-text leading-relaxed break-words font-interface cursor-text"
       :style="{ color: node.color || 'inherit' }"
+      @click.stop="startEditing"
     >
       <div
         v-if="localText.trim()"
@@ -107,8 +113,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:text', text: string): void;
-  (e: 'delete'): void;
+  (_e: 'update:text', _text: string): void;
+  (_e: 'delete'): void;
 }>();
 
 const isLooseText = computed(() => props.node.type === 'loose_text');
@@ -156,10 +162,8 @@ const finishEditing = () => {
 };
 
 const onLooseClick = (e: MouseEvent) => {
-  if (props.isSelected && !isEditing.value) {
-    e.stopPropagation();
-    startEditing();
-  }
+  e.stopPropagation();
+  startEditing();
 };
 
 // Iniciar edição automaticamente quando um nó de texto livre for criado vazio

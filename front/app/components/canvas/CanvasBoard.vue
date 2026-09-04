@@ -51,6 +51,7 @@
         @start-connect="onStartConnect"
         @update-text="onUpdateNodeText"
         @update-color="onUpdateNodeColor"
+        @convert-to-note="handleConvertToNote"
         @delete="removeNode"
       />
     </div>
@@ -73,11 +74,18 @@
             class="px-3.5 py-2 rounded-xl bg-primary hover:bg-primaryHover text-white text-xs font-semibold transition-all shadow-md hover:scale-102 cursor-pointer"
             @click="createInitialNote"
           >
-            + Adicionar Nota
+            + Adicionar Bloco
+          </button>
+          <button
+            class="px-3.5 py-2 rounded-xl bg-bgElevated hover:bg-bgSurface text-textPrimary border border-divider text-xs font-medium transition-all hover:scale-102 cursor-pointer flex items-center gap-1.5"
+            @click="openNewNoteDrawer"
+          >
+            <span>📝</span>
+            <span>Nova Nota</span>
           </button>
           <button
             class="px-3.5 py-2 rounded-xl bg-bgElevated hover:bg-bgSurface text-textPrimary border border-divider text-xs font-medium transition-all hover:scale-102 cursor-pointer"
-            @click="showInsertDrawer = true"
+            @click="openBooksDrawer"
           >
             📖 Inserir Livro
           </button>
@@ -102,7 +110,7 @@
       :is-saving="isSaving"
       @update:active-tool="activeTool = $event"
       @update:selected-shape-type="selectedShapeType = $event"
-      @open-insert-drawer="showInsertDrawer = true"
+      @open-insert-drawer="openGeneralDrawer"
       @create-text-at-center="createLooseTextAtCenter"
       @undo="undo"
       @redo="redo"
@@ -115,6 +123,8 @@
     <!-- Insert Books, Notes & Quotes Drawer -->
     <CanvasInsertDrawer
       v-if="showInsertDrawer"
+      :initial-tab="drawerTab"
+      :open-create-note="drawerOpenNewNote"
       @close="showInsertDrawer = false"
       @insert-book="handleInsertBook"
       @insert-note="handleInsertNote"
@@ -129,9 +139,9 @@ import type {
   CanvasNode,
   CanvasEdge,
   CanvasSide,
-  CanvasShapeType,
 } from '~/interfaces/canvas';
 import { useCanvas } from '~/composables/useCanvas';
+import { useNotes } from '~/composables/useNotes';
 import { getClosestAnchorSide } from '~/utils/canvasGeometry';
 
 const props = defineProps<{
@@ -140,6 +150,28 @@ const props = defineProps<{
 
 const boardContainerRef = ref<HTMLElement | null>(null);
 const showInsertDrawer = ref(false);
+const drawerTab = ref<'books' | 'notes' | 'quotes'>('books');
+const drawerOpenNewNote = ref(false);
+
+const { createNote } = useNotes();
+
+const openGeneralDrawer = () => {
+  drawerTab.value = 'books';
+  drawerOpenNewNote.value = false;
+  showInsertDrawer.value = true;
+};
+
+const openBooksDrawer = () => {
+  drawerTab.value = 'books';
+  drawerOpenNewNote.value = false;
+  showInsertDrawer.value = true;
+};
+
+const openNewNoteDrawer = () => {
+  drawerTab.value = 'notes';
+  drawerOpenNewNote.value = true;
+  showInsertDrawer.value = true;
+};
 
 const {
   nodes,
@@ -285,6 +317,7 @@ const onBackgroundPointerDown = (e: PointerEvent) => {
   if (isLeftClick && (activeTool.value === 'note' || activeTool.value === 'shape' || activeTool.value === 'loose_text')) {
     const coords = screenToCanvas(e.clientX, e.clientY);
     if (activeTool.value === 'loose_text') {
+      e.preventDefault();
       createLooseTextNode(coords.x, coords.y);
       activeTool.value = 'select';
       return;
@@ -563,6 +596,39 @@ const handleInsertNote = (note: any) => {
   };
   addNode(newNode);
   showInsertDrawer.value = false;
+};
+
+// Converter Bloco de Texto em Nota Persistente do Sistema
+const handleConvertToNote = async (nodeId: string) => {
+  const node = nodes.value.find((n) => n.id === nodeId);
+  if (!node) return;
+
+  const rawText = node.text || '';
+  const lines = rawText.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  let title = 'Nota do Canvas';
+  if (lines.length > 0 && lines[0]) {
+    title = lines[0].replace(/^[#\s*->]+/, '').trim().substring(0, 60) || 'Nota do Canvas';
+  }
+
+  try {
+    const created = await createNote({
+      title,
+      content: rawText,
+      folder: null,
+    });
+    updateNode(
+      nodeId,
+      {
+        type: 'note_embed',
+        noteId: created.id,
+        noteTitle: created.title,
+        noteContent: created.content,
+      },
+      true
+    );
+  } catch (err) {
+    console.error('Erro ao converter bloco em nota:', err);
+  }
 };
 
 // Keydown Shortcuts

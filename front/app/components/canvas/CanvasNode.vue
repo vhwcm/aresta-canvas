@@ -82,7 +82,7 @@
         @pointerdown.stop="onResizePointerDown('nw', $event)"
       ></div>
 
-      <!-- Node Mini Floating Toolbar (Color & Delete) -->
+      <!-- Node Mini Floating Toolbar (Color, Save as Note & Delete) -->
       <div
         class="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-bgPanel/95 border border-divider shadow-xl backdrop-blur-md z-40"
         @pointerdown.stop
@@ -97,6 +97,19 @@
         ></button>
 
         <div class="w-px h-3.5 bg-divider mx-0.5"></div>
+
+        <!-- Convert / Save as Note button -->
+        <button
+          v-if="node.type === 'text' || node.type === 'loose_text'"
+          class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-primary/20 text-primary transition-colors text-xs font-medium"
+          title="Salvar como Nota persistente no Aresta Notes"
+          @click.stop="$emit('convert-to-note', node.id)"
+        >
+          <span>📝</span>
+          <span class="text-[10px] hidden sm:inline">Criar Nota</span>
+        </button>
+
+        <div v-if="node.type === 'text' || node.type === 'loose_text'" class="w-px h-3.5 bg-divider mx-0.5"></div>
 
         <!-- Delete Button -->
         <button
@@ -128,13 +141,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'select', id: string, isShift: boolean): void;
-  (e: 'drag-start', id: string, event: PointerEvent): void;
-  (e: 'resize-start', id: string, handle: string, event: PointerEvent): void;
-  (e: 'start-connect', nodeId: string, side: CanvasSide, event: PointerEvent): void;
-  (e: 'update-text', id: string, text: string): void;
-  (e: 'update-color', id: string, color: string): void;
-  (e: 'delete', id: string): void;
+  (_e: 'select', _id: string, _isShift: boolean): void;
+  (_e: 'drag-start', _id: string, _event: PointerEvent): void;
+  (_e: 'resize-start', _id: string, _handle: string, _event: PointerEvent): void;
+  (_e: 'start-connect', _nodeId: string, _side: CanvasSide, _event: PointerEvent): void;
+  (_e: 'update-text', _id: string, _text: string): void;
+  (_e: 'update-color', _id: string, _color: string): void;
+  (_e: 'convert-to-note', _id: string): void;
+  (_e: 'delete', _id: string): void;
 }>();
 
 const isHovered = ref(false);
@@ -164,6 +178,17 @@ const getAnchorPositionClass = (side: CanvasSide): string => {
 
 const onPointerDown = (e: PointerEvent) => {
   emit('select', props.node.id, e.shiftKey);
+  const target = e.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === 'TEXTAREA' ||
+      target.tagName === 'INPUT' ||
+      target.isContentEditable ||
+      target.closest('.select-text') ||
+      target.closest('button'))
+  ) {
+    return;
+  }
   emit('drag-start', props.node.id, e);
 };
 
